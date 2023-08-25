@@ -1,7 +1,8 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseRedirect
 from . import forms,models
-from .models import StudentExtra
+from django.urls import reverse
+from .models import StudentExtra, Book
 from django.http import HttpResponseRedirect
 from django.contrib.auth.models import Group
 from django.contrib import auth, messages
@@ -202,3 +203,39 @@ def contactus_view(request):
             send_mail(str(name)+' || '+str(email),message, EMAIL_HOST_USER, ['wapka1503@gmail.com'], fail_silently = False)
             return render(request, 'library/contactussuccess.html')
     return render(request, 'library/contactus.html', {'form':sub})
+
+
+@login_required(login_url='adminlogin')
+@user_passes_test(is_admin)
+def delete_bookByAdmin(request):
+    if request.method == 'GET':
+        pk = request.GET['pk']
+        
+    book = get_object_or_404(Book, pk=pk)
+
+    if book:
+        book.delete()
+    
+    return redirect(request.META.get('HTTP_REFERER'))
+
+
+@login_required(login_url='adminlogin')
+@user_passes_test(is_admin)
+def edit_book(request, pk):
+    book = get_object_or_404(Book, pk=pk)
+
+    if request.method == 'POST':
+        book.name = request.POST['name']
+        book.isbn = request.POST['isbn']
+        book.author = request.POST['author']
+        book.category = request.POST['category']
+        book.publication_name = request.POST['publication_name']
+        book.publication_date = request.POST['publication_date']
+        book.edition = request.POST['edition']
+        book.save()
+
+        Books=models.Book.objects.all()
+        return render(request,'library/viewbook.html',{'books':Books})
+
+    context = {'book': book}
+    return render(request, 'library/editBook.html', context)

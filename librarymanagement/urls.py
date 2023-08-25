@@ -47,5 +47,6 @@ urlpatterns = [
 
     path('aboutus', views.aboutus_view),
     path('contactus', views.contactus_view),
-
+    path('remove-book', views.delete_bookByAdmin, name='remove-book-admin'),
+    path('libarry/<int:pk>/', views.edit_book, name='edit-book'),
 ]

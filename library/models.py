@@ -49,6 +49,7 @@ class Book(models.Model):
 
 def get_expiry():
     return datetime.today() + timedelta(days=15)
+
 class IssuedBook(models.Model):
     #moved this in forms.py
     #enrollment=[(student.enrollment,str(student.get_name)+' ['+str(student.enrollment)+']') for student in StudentExtra.objects.all()]

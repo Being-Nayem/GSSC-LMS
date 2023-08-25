@@ -52,6 +52,12 @@ color: #607d8b;
 padding: 2px 8px;
 border-radius: 5px;
 }
+
+.btn-dlt-edt{
+  display:flex;
+  justify-content: space-between;
+}
+
 </style>
   </head>
   <body>
@@ -64,13 +70,14 @@ border-radius: 5px;
   <table class="table table-hover table-condensed table-striped table-bordered">
     <thead>
     <tr>
-    <th>Book Name</th>
-    <th>ISBN</th>
-    <th>Author</th>
-    <th>Category</th>
-    <th>Publication Name</th>
-    <th>Publication Date</th>
-    <th>Edition</th>
+      <th>Book Name</th>
+      <th>ISBN</th>
+      <th>Author</th>
+      <th>Category</th>
+      <th>Publication Name</th>
+      <th>Publication Date</th>
+      <th>Edition</th>
+      <th>Action</th>
     </tr>
     </thead>
     <tfoot>
@@ -90,6 +97,15 @@ border-radius: 5px;
           <td>{{book.publication_name}}</td>
           <td>{{book.publication_date}}</td>
           <td>{{book.edition}}</td>
+          <td>
+            <div class=btn-dlt-edt>
+              <form action="{% url 'remove-book-admin' %}">
+                <input type="hidden" name="pk" value="{{book.pk}}">
+                <button type="submit" pid="{{book.pk}}" class="btn btn-outline-danger">Delete</button>
+              </form>
+              <a href="{% url 'edit-book' book.pk %}" class="btn btn-outline-warning">Edit</a>
+            </div>
+          </td>
         </tr>
       {% endfor %}
     </tbody>

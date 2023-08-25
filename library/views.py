@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from . import forms,models
+from .models import StudentExtra
 from django.http import HttpResponseRedirect
 from django.contrib.auth.models import Group
-from django.contrib import auth
+from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required,user_passes_test
 from datetime import datetime,timedelta,date
 from django.core.mail import send_mail
@@ -28,7 +29,6 @@ def adminclick_view(request):
     return render(request,'library/adminclick.html')
 
 
-
 def adminsignup_view(request):
     form=forms.AdminSigupForm()
     if request.method=='POST':
@@ -46,32 +46,37 @@ def adminsignup_view(request):
     return render(request,'library/adminsignup.html',{'form':form})
 
 
-
-
-
-
 def studentsignup_view(request):
-    form1=forms.StudentUserForm()
-    form2=forms.StudentExtraForm()
-    mydict={'form1':form1,'form2':form2}
-    if request.method=='POST':
-        form1=forms.StudentUserForm(request.POST)
-        form2=forms.StudentExtraForm(request.POST)
+    form1 = forms.StudentUserForm()
+    form2 = forms.StudentExtraForm()
+    mydict = {'form1': form1, 'form2': form2}
+    
+    if request.method == 'POST':
+        form1 = forms.StudentUserForm(request.POST)
+        form2 = forms.StudentExtraForm(request.POST)
+        
         if form1.is_valid() and form2.is_valid():
-            user=form1.save()
+            student_id = form2.cleaned_data['student_id']
+            
+            # Check if a student with the provided student_id already exists
+            if StudentExtra.objects.filter(student_id=student_id).exists():
+                messages.error(request, 'A student already exists with this student ID. Please try again with a different student ID.')
+                return render(request, 'library/studentsignup.html', context=mydict)
+            
+            user = form1.save()
             user.set_password(user.password)
             user.save()
-            f2=form2.save(commit=False)
-            f2.user=user
-            user2=f2.save()
-
+            
+            f2 = form2.save(commit=False)
+            f2.user = user
+            user2 = f2.save()
+            
             my_student_group = Group.objects.get_or_create(name='STUDENT')
             my_student_group[0].user_set.add(user)
 
-        return HttpResponseRedirect('studentlogin')
-    return render(request,'library/studentsignup.html',context=mydict)
-
-
+            return HttpResponseRedirect('studentlogin')
+    
+    return render(request, 'library/studentsignup.html', context=mydict)
 
 
 def is_admin(user):
@@ -104,8 +109,6 @@ def viewbook_view(request):
     return render(request,'library/viewbook.html',{'books':books})
 
 
-
-
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def issuebook_view(request):
@@ -115,7 +118,7 @@ def issuebook_view(request):
         form=forms.IssuedBookForm(request.POST)
         if form.is_valid():
             obj=models.IssuedBook()
-            obj.enrollment=request.POST.get('enrollment2')
+            obj.student_id=request.POST.get('enrollment2')
             obj.isbn=request.POST.get('isbn2')
             obj.save()
             return render(request,'library/bookissued.html')
@@ -125,30 +128,30 @@ def issuebook_view(request):
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def viewissuedbook_view(request):
-    issuedbooks=models.IssuedBook.objects.all()
-    li=[]
+    issuedbooks = models.IssuedBook.objects.all()
+    li = []
+    
     for ib in issuedbooks:
-        issdate=str(ib.issuedate.day)+'-'+str(ib.issuedate.month)+'-'+str(ib.issuedate.year)
-        expdate=str(ib.expirydate.day)+'-'+str(ib.expirydate.month)+'-'+str(ib.expirydate.year)
-        #fine calculation
-        days=(date.today()-ib.issuedate)
-        print(date.today())
-        d=days.days
-        fine=0
-        if d>15:
-            day=d-15
-            fine=day*10
-
-
-        books=list(models.Book.objects.filter(isbn=ib.isbn))
-        students=list(models.StudentExtra.objects.filter(enrollment=ib.enrollment))
-        i=0
-        for l in books:
-            t=(students[i].get_name,students[i].enrollment,books[i].name,books[i].author,issdate,expdate,fine)
-            i=i+1
+        issdate = str(ib.issuedate.day) + '-' + str(ib.issuedate.month) + '-' + str(ib.issuedate.year)
+        expdate = str(ib.expirydate.day) + '-' + str(ib.expirydate.month) + '-' + str(ib.expirydate.year)
+        
+        # Fine calculation
+        days = (date.today() - ib.issuedate)
+        d = days.days
+        fine = 0
+        if d > 15:
+            day = d - 15
+            fine = day * 10
+        
+        books = list(models.Book.objects.filter(isbn=ib.isbn))
+        students = list(models.StudentExtra.objects.filter(student_id=ib.student_id))
+        
+        for student, book in zip(students, books):
+            t = (student.get_name, student.student_id, student.session,student.educational_year,student.department_name , book.name, book.author, issdate, expdate, fine)
             li.append(t)
+    
+    return render(request, 'library/viewissuedbook.html', {'li': li})
 
-    return render(request,'library/viewissuedbook.html',{'li':li})
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
@@ -160,7 +163,7 @@ def viewstudent_view(request):
 @login_required(login_url='studentlogin')
 def viewissuedbookbystudent(request):
     student=models.StudentExtra.objects.filter(user_id=request.user.id)
-    issuedbook=models.IssuedBook.objects.filter(enrollment=student[0].enrollment)
+    issuedbook=models.IssuedBook.objects.filter(student_id=student[0].student_id)
 
     li1=[]
 
@@ -168,7 +171,7 @@ def viewissuedbookbystudent(request):
     for ib in issuedbook:
         books=models.Book.objects.filter(isbn=ib.isbn)
         for book in books:
-            t=(request.user,student[0].enrollment,student[0].branch,book.name,book.author)
+            t=(request.user,student[0].student_id,student[0].session,student[0].educational_year,student[0].department_name,book.name,book.author)
             li1.append(t)
         issdate=str(ib.issuedate.day)+'-'+str(ib.issuedate.month)+'-'+str(ib.issuedate.year)
         expdate=str(ib.expirydate.day)+'-'+str(ib.expirydate.month)+'-'+str(ib.expirydate.year)

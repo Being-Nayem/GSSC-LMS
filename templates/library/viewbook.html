@@ -68,6 +68,9 @@ border-radius: 5px;
     <th>ISBN</th>
     <th>Author</th>
     <th>Category</th>
+    <th>Publication Name</th>
+    <th>Publication Date</th>
+    <th>Edition</th>
     </tr>
     </thead>
     <tfoot>
@@ -84,6 +87,9 @@ border-radius: 5px;
           <td>{{book.isbn}}</td>
           <td>{{book.author}}</td>
           <td>{{book.category}}</td>
+          <td>{{book.publication_name}}</td>
+          <td>{{book.publication_date}}</td>
+          <td>{{book.edition}}</td>
         </tr>
       {% endfor %}
     </tbody>

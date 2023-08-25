@@ -2,7 +2,7 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
-    <title></title>
+    <title>GSSC LMS</title>
 
     <style media="screen">
     table.redTable {
@@ -69,8 +69,10 @@ border-radius: 5px;
     <thead>
     <tr>
     <th>Name</th>
-    <th>Enrollment</th>
-    <th>Branch</th>
+    <th>Student ID</th>
+    <th>Session</th>
+    <th>Year</th>
+    <th>Department</th>
     </tr>
     </thead>
     <tfoot>
@@ -84,8 +86,10 @@ border-radius: 5px;
       {% for s in students %}
         <tr>
           <td>{{s.get_name}}</td>
-          <td>{{s.enrollment}}</td>
-          <td>{{s.branch}}</td>
+          <td>{{s.student_id}}</td>
+          <td>{{s.session}}</td>
+          <td>{{s.educational_year}}</td>
+          <td>{{s.department_name}}</td>
     
         </tr>
     

@@ -35,7 +35,14 @@ class Book(models.Model):
         ('thriller', 'Thriller'),
         ('romance', 'Romance'),
         ('scifi','Sci-Fi')
-        ]
+    ]
+    
+    status_choices = [
+        ('received', 'Received'),
+        ('issued', 'Issued'),
+        ('pending','Pending')
+    ]
+    
     name=models.CharField(max_length=30)
     isbn=models.PositiveIntegerField()
     author=models.CharField(max_length=40)
@@ -43,6 +50,9 @@ class Book(models.Model):
     publication_name = models.CharField(max_length=50, blank=True)
     publication_date = models.DateField(null=True, blank=True)
     edition = models.PositiveIntegerField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=status_choices, default='received')
+    requested_by = models.ForeignKey(StudentExtra, on_delete=models.SET_NULL, null=True, blank=True)
+     
     def __str__(self):
         return str(self.name)+"["+str(self.isbn)+']'
 
@@ -60,6 +70,10 @@ class IssuedBook(models.Model):
     expirydate=models.DateField(default=get_expiry)
     department_name = models.CharField(max_length=100, default="Unknown Department")
     session = models.CharField(max_length=20, default="")  
-    educational_year = models.PositiveIntegerField(default=2023)  
+    educational_year = models.PositiveIntegerField(default=2023)
+    issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    
     def __str__(self):
         return self.student_id
+

@@ -48,5 +48,11 @@ urlpatterns = [
     path('aboutus', views.aboutus_view),
     path('contactus', views.contactus_view),
     path('remove-book', views.delete_bookByAdmin, name='remove-book-admin'),
-    path('libarry/<int:pk>/', views.edit_book, name='edit-book'),
+    path('book/<int:pk>/', views.edit_book, name='edit-book'),
+    path('remove-student', views.delete_studentByAdmin, name='remove-student-admin'),
+    path('student/<int:pk>/', views.edit_student, name='edit-student'),
+    path('viewbook_by_student', views.viewbook_viewbyStudent),
+    path('borrow-book', views.request_borrow_book, name='borrow-book'),
+    path('viewpendingbooks/', views.pending_book_requests),
+    path('approve-issue-book/', views.approve_issue_book, name='approve-issue-book'),
 ]

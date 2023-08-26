@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseRedirect
 from . import forms,models
 from django.urls import reverse
-from .models import StudentExtra, Book
+from .models import StudentExtra, Book, IssuedBook
 from django.http import HttpResponseRedirect
 from django.contrib.auth.models import Group
 from django.contrib import auth, messages
@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required,user_passes_test
 from datetime import datetime,timedelta,date
 from django.core.mail import send_mail
 from librarymanagement.settings import EMAIL_HOST_USER
+from django.http import HttpResponse
 
 
 def home_view(request):
@@ -17,11 +18,13 @@ def home_view(request):
         return HttpResponseRedirect('afterlogin')
     return render(request,'library/index.html')
 
+
 #for showing signup/login button for student
 def studentclick_view(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect('afterlogin')
     return render(request,'library/studentclick.html')
+
 
 #for showing signup/login button for teacher
 def adminclick_view(request):
@@ -83,6 +86,7 @@ def studentsignup_view(request):
 def is_admin(user):
     return user.groups.filter(name='ADMIN').exists()
 
+
 def afterlogin_view(request):
     if is_admin(request.user):
         return render(request,'library/adminafterlogin.html')
@@ -103,6 +107,7 @@ def addbook_view(request):
             return render(request,'library/bookadded.html')
     return render(request,'library/addbook.html',{'form':form})
 
+
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def viewbook_view(request):
@@ -113,17 +118,32 @@ def viewbook_view(request):
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def issuebook_view(request):
-    form=forms.IssuedBookForm()
-    if request.method=='POST':
-        #now this form have data from html
-        form=forms.IssuedBookForm(request.POST)
+    form = forms.IssuedBookForm()
+    
+    if request.method == 'POST':
+        form = forms.IssuedBookForm(request.POST)
+        
         if form.is_valid():
-            obj=models.IssuedBook()
-            obj.student_id=request.POST.get('enrollment2')
-            obj.isbn=request.POST.get('isbn2')
+            student_id = request.POST.get('student_id2')
+            isbn = request.POST.get('isbn2')
+            
+            # Create IssuedBook instance and set its attributes
+            issued_by_user = request.user  # Get the actual User instance
+            obj = models.IssuedBook(
+                student_id=student_id,
+                isbn=isbn,
+                issued_by=issued_by_user # Set the admin who issued the book
+            )
             obj.save()
-            return render(request,'library/bookissued.html')
-    return render(request,'library/issuebook.html',{'form':form})
+            
+            # Update the book's status to 'Issued'
+            book = models.Book.objects.get(isbn=isbn)
+            book.status = 'issued'
+            book.save()
+            
+            return render(request, 'library/bookissued.html')
+    
+    return render(request, 'library/issuebook.html', {'form': form})
 
 
 @login_required(login_url='adminlogin')
@@ -148,7 +168,7 @@ def viewissuedbook_view(request):
         students = list(models.StudentExtra.objects.filter(student_id=ib.student_id))
         
         for student, book in zip(students, books):
-            t = (student.get_name, student.student_id, student.session,student.educational_year,student.department_name , book.name, book.author, issdate, expdate, fine)
+            t = (student.get_name, student.student_id, student.session, student.educational_year, student.department_name, book.name, book.author, issdate, expdate, fine, book.status, ib.issued_by)
             li.append(t)
     
     return render(request, 'library/viewissuedbook.html', {'li': li})
@@ -163,34 +183,55 @@ def viewstudent_view(request):
 
 @login_required(login_url='studentlogin')
 def viewissuedbookbystudent(request):
-    student=models.StudentExtra.objects.filter(user_id=request.user.id)
-    issuedbook=models.IssuedBook.objects.filter(student_id=student[0].student_id)
+    students = models.StudentExtra.objects.filter(user_id=request.user.id)
 
-    li1=[]
+    if students:
+        student = students[0]
+        issued_books = models.IssuedBook.objects.filter(student_id=student.student_id)
 
-    li2=[]
-    for ib in issuedbook:
-        books=models.Book.objects.filter(isbn=ib.isbn)
-        for book in books:
-            t=(request.user,student[0].student_id,student[0].session,student[0].educational_year,student[0].department_name,book.name,book.author)
-            li1.append(t)
-        issdate=str(ib.issuedate.day)+'-'+str(ib.issuedate.month)+'-'+str(ib.issuedate.year)
-        expdate=str(ib.expirydate.day)+'-'+str(ib.expirydate.month)+'-'+str(ib.expirydate.year)
-        #fine calculation
-        days=(date.today()-ib.issuedate)
-        print(date.today())
-        d=days.days
-        fine=0
-        if d>15:
-            day=d-15
-            fine=day*10
-        t=(issdate,expdate,fine)
-        li2.append(t)
+        issued_books_info = []
+        for issued_book in issued_books:
+            books = models.Book.objects.filter(isbn=issued_book.isbn)
+            book_info = []
+            for book in books:
+                book_info.append((
+                    request.user,
+                    student.student_id,
+                    book.name,
+                    book.author,
+                    book.status
+                ))
+            
+            issued_by=  issued_book.issued_by
 
-    return render(request,'library/viewissuedbookbystudent.html',{'li1':li1,'li2':li2})
+            issued_date = issued_book.issuedate.strftime('%d-%m-%Y')
+            expiry_date = issued_book.expirydate.strftime('%d-%m-%Y')
+            
+            days_overdue = (date.today() - issued_book.issuedate).days
+            fine = max(0, (days_overdue - 15) * 10)
+            
+            issued_books_info.append({
+                'books': book_info,
+                'issued_date': issued_date,
+                'expiry_date': expiry_date,
+                'fine': fine,
+                'issued_by': issued_by,
+            })
+
+        return render(
+            request,
+            'library/viewissuedbookbystudent.html',
+            {'issued_books_info': issued_books_info}
+        )
+    else:
+        # Handle the case where the student doesn't exist
+        # You can return an error message or redirect the user
+        return HttpResponse("Student not found.")
+
 
 def aboutus_view(request):
     return render(request,'library/aboutus.html')
+
 
 def contactus_view(request):
     sub = forms.ContactusForm()
@@ -239,3 +280,109 @@ def edit_book(request, pk):
 
     context = {'book': book}
     return render(request, 'library/editBook.html', context)
+
+
+@login_required(login_url='adminlogin')
+@user_passes_test(is_admin)
+def delete_studentByAdmin(request):
+    if request.method == 'GET':
+        pk = request.GET.get('pk')  # Using get() method to avoid KeyError
+        
+        if pk is not None:
+            student = get_object_or_404(StudentExtra, pk=pk)
+            student.delete()
+    
+    return redirect(request.META.get('HTTP_REFERER'))
+
+
+@login_required(login_url='adminlogin')
+@user_passes_test(is_admin)
+def edit_student(request, pk):
+    student = get_object_or_404(StudentExtra, pk=pk)  # Use StudentExtra instead of Book
+
+    if request.method == 'POST':
+        student.user.first_name = request.POST['f_name']  # Correct the field name
+        student.user.last_name = request.POST['l_name'] 
+        student.student_id = request.POST['student_id']
+        student.department_name = request.POST['department_name']
+        student.session = request.POST['session']
+        student.educational_year = request.POST['educational_year']
+        student.user.save()  # Save the user instance
+        student.save()  # Save the StudentExtra instance
+
+        students = StudentExtra.objects.all()  # Use lowercase 'students' instead of 'StudentExtra'
+        return render(request, 'library/viewstudent.html', {'students': students})
+
+    context = {'student': student}
+    return render(request, 'library/editStudent.html', context)
+
+
+@login_required(login_url='studentlogin')
+def viewbook_viewbyStudent(request):
+    books=models.Book.objects.filter(status='received')
+    return render(request,'library/viewAllbookByStudent.html',{'books':books})
+
+
+@login_required(login_url='studentlogin')
+def request_borrow_book(request):
+    if request.method == 'POST':
+        book_id = request.POST.get('book_id')
+        try:
+            book = Book.objects.get(pk=book_id, status='received')
+            student = get_object_or_404(StudentExtra, user=request.user)  # Get the StudentExtra instance for the logged-in user
+            print(student.student_id)
+            print(student.department_name)
+
+            # Create a pending book request
+            book.status = 'pending'
+            book.requested_by = student
+            book.save()
+
+            return render(request, 'library/book_request_success.html')  # Redirect to a success page
+        except Book.DoesNotExist:
+            pass  # Handle error if book not found or not in 'received' status
+
+    return render(request, 'library/book_request_failure.html')  # Redirect to a failure page
+
+
+@login_required(login_url='adminlogin')
+def pending_book_requests(request):
+    user = request.user
+
+    # Check if the user belongs to the "ADMIN" group
+    if user.groups.filter(name='ADMIN').exists():
+        pending_books = Book.objects.filter(status='pending')
+        print(pending_books)
+        return render(request, 'library/view_pending_books.html', {'pending_books': pending_books})
+    else:
+        return render(request, 'library/access_denied.html')  # Redirect to access denied page for non-admin users
+
+
+
+@login_required(login_url='adminlogin')
+def approve_issue_book(request):
+    if request.method == 'POST':
+        book_id = request.POST.get('book_id')
+        student_id = request.POST.get('student_id')  # Get the student_id from the form
+        isbn = request.POST.get('isbn')  # Get the ISBN from the form
+
+        try:
+            book = Book.objects.get(pk=book_id, status='pending')
+            print(book)
+            
+            # Create an IssuedBook instance
+            issued_book = IssuedBook.objects.create(
+                student_id=student_id,
+                isbn=isbn,
+                issued_by=request.user  # Assuming the currently logged-in admin approves the book
+            )
+
+            # Update the book status to 'issued'
+            book.status = 'issued'
+            book.save()
+
+            return redirect(request.META.get('HTTP_REFERER'))  # Redirect back to the pending requests page
+        except Book.DoesNotExist:
+            pass  # Handle error if book not found or not in 'pending' status
+
+    return render(request, 'library/approval_failure.html')  # Redirect to an approval failure page

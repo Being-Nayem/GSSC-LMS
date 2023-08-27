@@ -24,7 +24,7 @@ from django.contrib.auth.views import LoginView,LogoutView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/',include('django.contrib.auth.urls') ),
-    path('', views.home_view),
+    path('', views.home_view, name='home'),
 
     path('adminclick', views.adminclick_view),
     path('studentclick', views.studentclick_view),
@@ -35,7 +35,7 @@ urlpatterns = [
     path('adminlogin', LoginView.as_view(template_name='library/adminlogin.html')),
     path('studentlogin', LoginView.as_view(template_name='library/studentlogin.html')),
 
-    path('logout', LogoutView.as_view(template_name='library/index.html')),
+    path('logout', views.signout, name='signout'),
     path('afterlogin', views.afterlogin_view),
 
     path('addbook', views.addbook_view),
@@ -52,9 +52,12 @@ urlpatterns = [
     path('remove-student', views.delete_studentByAdmin, name='remove-student-admin'),
     path('student/<int:pk>/', views.edit_student, name='edit-student'),
     path('viewbook_by_student', views.viewbook_viewbyStudent),
-    path('borrow-book', views.request_borrow_book, name='borrow-book'),
-    path('viewpendingbooks/', views.pending_book_requests, name='viewpendingbooks'),
-    path('approve-issue-book/', views.approve_issue_book, name='approve-issue-book'),
+    path('borrow-book', views.request_borrow_book, name='borrow_book'),
+    path('viewpendingbooks/', views.pending_book_requests, name='view_pendingbooks'),
+    path('approve-issue-book/', views.approve_issue_book, name='approve_issue_book'),
     path('declineissuebook', views.decline_issue_book, name='decline-issue-book'),
     path('returnbook', views.request_return_book, name='returnbook'),
+    path('viewreturnrequest', views.view_return_request, name='view_return_request'),
+    path('approve-return-request', views.approve_return_book, name='approve_return_request'),
 ]
+

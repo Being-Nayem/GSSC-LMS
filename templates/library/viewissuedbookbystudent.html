@@ -94,20 +94,20 @@ border-radius: 5px;
         <tbody>
             {% for t in issued_books_info %}
               <tr>
-                <td>{{ t.books.0.0.username }}</td> <!-- Extracting the username -->
-                <td>{{ t.books.0.1 }}</td>
-                <td>{{ t.books.0.2 }}</td>
-                <td>{{ t.books.0.3 }}</td>
-                <td>{{ t.books.0.4 }}</td>
+                <td>{{ t.student_name }}</td>
+                <td>{{ t.student_id }}</td>
+                <td>{{ t.book_name }}</td>
+                <td>{{ t.isbn }}</td>
+                <td>{{ t.author }}</td>
                 <td>{{ t.issued_date }}</td>
                 <td>{{ t.expiry_date }}</td>
                 <td>{{ t.fine }}</td>
                 <td>{{ t.issued_by }}</td>
-                <td>{{ t.books.0.5 }}</td>
+                <td>{{ t.status }}</td>
                 <td>
                   <form action="{% url 'returnbook' %}" method="POST">
                     {% csrf_token %}
-                    <input type="hidden" name="isbn" value="{{ t.books.0.3 }}">
+                    <input type="hidden" name="isbn" value="{{ t.isbn }}">
                     {% if t.books.0.5 == 'return_requested' %}
                       <button type="button" class="btn btn-secondary" disabled>Return</button>
                     {% else %}

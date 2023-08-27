@@ -11,6 +11,7 @@ from datetime import datetime,timedelta,date
 from django.core.mail import send_mail
 from librarymanagement.settings import EMAIL_HOST_USER
 from django.http import HttpResponse
+from django.contrib.auth import authenticate, login, logout
 
 
 def home_view(request):
@@ -92,6 +93,20 @@ def afterlogin_view(request):
         return render(request,'library/adminafterlogin.html')
     else:
         return render(request,'library/studentafterlogin.html')
+
+def admin_signin(request):
+   pass
+
+
+def student_signin(request):
+    pass
+
+
+
+@login_required
+def signout(request):
+    logout(request)
+    return redirect('home')
 
 
 @login_required(login_url='adminlogin')
@@ -191,33 +206,28 @@ def viewissuedbookbystudent(request):
 
         issued_books_info = []
         for issued_book in issued_books:
-            books = models.Book.objects.filter(isbn=issued_book.isbn)
-            book_info = []
-            for book in books:
-                book_info.append((
-                    request.user,
-                    student.student_id,
-                    book.name,
-                    book.isbn,
-                    book.author,
-                    book.status
-                ))
-            
-            issued_by=  issued_book.issued_by
+            book = models.Book.objects.get(isbn=issued_book.isbn)
+            if book.status == 'issued':
+                issued_by = issued_book.issued_by
 
-            issued_date = issued_book.issuedate.strftime('%d-%m-%Y')
-            expiry_date = issued_book.expirydate.strftime('%d-%m-%Y')
-            
-            days_overdue = (date.today() - issued_book.issuedate).days
-            fine = max(0, (days_overdue - 15) * 10)
-            
-            issued_books_info.append({
-                'books': book_info,
-                'issued_date': issued_date,
-                'expiry_date': expiry_date,
-                'fine': fine,
-                'issued_by': issued_by,
-            })
+                issued_date = issued_book.issuedate.strftime('%d-%m-%Y')
+                expiry_date = issued_book.expirydate.strftime('%d-%m-%Y')
+
+                days_overdue = (date.today() - issued_book.issuedate).days
+                fine = max(0, (days_overdue - 15) * 10)
+
+                issued_books_info.append({
+                    'student_name': student.user.username,
+                    'student_id': student.student_id,
+                    'book_name': book.name,
+                    'isbn': book.isbn,
+                    'author': book.author,
+                    'issued_date': issued_date,
+                    'expiry_date': expiry_date,
+                    'fine': fine,
+                    'issued_by': issued_by,
+                    'status': book.status,
+                })
 
         return render(
             request,
@@ -225,9 +235,9 @@ def viewissuedbookbystudent(request):
             {'issued_books_info': issued_books_info}
         )
     else:
-        # Handle the case where the student doesn't exist
-        # You can return an error message or redirect the user
         return HttpResponse("Student not found.")
+
+
 
 
 def aboutus_view(request):
@@ -392,7 +402,7 @@ def approve_issue_book(request):
 @login_required(login_url='adminlogin')
 def decline_issue_book(request):
     if request.method == 'POST':
-        book_id = request.POST.get('isbn')
+        book_id = request.POST.get('book_id')
         try:
             book = Book.objects.get(pk=book_id, status='pending')
 
@@ -406,7 +416,7 @@ def decline_issue_book(request):
             book.requested_by = None  # Reset the requested_by field
             book.save()
 
-            return redirect('viewpendingbooks')  # Redirect back to the pending requests page
+            return redirect('view_pendingbooks')  # Redirect back to the pending requests page
         except Book.DoesNotExist:
             pass  # Handle error if book not found or not in 'pending' status
 
@@ -414,21 +424,55 @@ def decline_issue_book(request):
 
 
 @login_required(login_url='studentlogin')
+@login_required(login_url='studentlogin')
 def request_return_book(request):
     if request.method == 'POST':
         isbn = request.POST.get('isbn')
-
+        print(isbn)
         try:
             book = Book.objects.get(isbn=isbn, status='issued')
-
             # Update the IssuedBook status to 'return_requested'
             book.status = 'return_requested'
             book.save()
-
-            return render(request, 'library/return_request_success.html')  # Redirect to a success page
-        except book.DoesNotExist:
-            return render(request, 'library/return_request_failure.html')
+            return render(request, 'library/return_request_success.html')
+        except Book.DoesNotExist:
+            return render(request, 'library/return_request_failure.html')  # Handle case when book doesn't exist or isn't issued
 
     return render(request, 'library/return_request_failure.html')  # Redirect to a failure page
 
 
+@login_required(login_url='adminlogin')
+def view_return_request(request):
+    user = request.user
+
+    # Check if the user belongs to the "ADMIN" group
+    if user.groups.filter(name='ADMIN').exists():
+        return_requested_book = Book.objects.filter(status='return_requested')
+        print(return_requested_book)
+        return render(request, 'library/view_return_requested_book.html', {'return_requested_book': return_requested_book})
+    else:
+        return render(request, 'library/access_denied.html')  # Redirect to access denied page for non-admin users
+    
+    
+@login_required(login_url='adminlogin')
+def approve_return_book(request):
+    if request.method == 'POST':
+        book_id = request.POST.get('book_id')
+        try:
+            book = Book.objects.get(pk=book_id, status='return_requested')
+
+            # Check if there's an associated IssuedBook instance
+            issued_book = IssuedBook.objects.filter(student_id=book.requested_by.student_id, isbn=book.isbn).first()
+            if issued_book:
+                issued_book.delete()  # Delete the IssuedBook instance
+
+            # Update the book status to 'received'
+            book.status = 'received'
+            book.requested_by = None  # Reset the requested_by field
+            book.save()
+
+            return redirect('view_return_request')  # Redirect back to the pending requests page
+        except Book.DoesNotExist:
+            pass  # Handle error if book not found or not in 'pending' status
+
+    return render(request, 'library/request_approve_failure.html')  # Redirect to a decline failure page

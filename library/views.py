@@ -168,7 +168,7 @@ def viewissuedbook_view(request):
         students = list(models.StudentExtra.objects.filter(student_id=ib.student_id))
         
         for student, book in zip(students, books):
-            t = (student.get_name, student.student_id, student.session, student.educational_year, student.department_name, book.name, book.author, issdate, expdate, fine, book.status, ib.issued_by)
+            t = (student.get_name, student.student_id, student.session, student.department_name, book.name, book.isbn, book.author, issdate, expdate, fine, book.status, ib.issued_by)
             li.append(t)
     
     return render(request, 'library/viewissuedbook.html', {'li': li})
@@ -198,6 +198,7 @@ def viewissuedbookbystudent(request):
                     request.user,
                     student.student_id,
                     book.name,
+                    book.isbn,
                     book.author,
                     book.status
                 ))
@@ -330,8 +331,8 @@ def request_borrow_book(request):
         try:
             book = Book.objects.get(pk=book_id, status='received')
             student = get_object_or_404(StudentExtra, user=request.user)  # Get the StudentExtra instance for the logged-in user
-            print(student.student_id)
-            print(student.department_name)
+            # print(student.student_id)
+            # print(student.department_name)
 
             # Create a pending book request
             book.status = 'pending'
@@ -386,3 +387,48 @@ def approve_issue_book(request):
             pass  # Handle error if book not found or not in 'pending' status
 
     return render(request, 'library/approval_failure.html')  # Redirect to an approval failure page
+
+
+@login_required(login_url='adminlogin')
+def decline_issue_book(request):
+    if request.method == 'POST':
+        book_id = request.POST.get('isbn')
+        try:
+            book = Book.objects.get(pk=book_id, status='pending')
+
+            # Check if there's an associated IssuedBook instance
+            issued_book = IssuedBook.objects.filter(student_id=book.requested_by.student_id, isbn=book.isbn).first()
+            if issued_book:
+                issued_book.delete()  # Delete the IssuedBook instance
+
+            # Update the book status to 'received'
+            book.status = 'received'
+            book.requested_by = None  # Reset the requested_by field
+            book.save()
+
+            return redirect('viewpendingbooks')  # Redirect back to the pending requests page
+        except Book.DoesNotExist:
+            pass  # Handle error if book not found or not in 'pending' status
+
+    return render(request, 'library/decline_failure.html')  # Redirect to a decline failure page
+
+
+@login_required(login_url='studentlogin')
+def request_return_book(request):
+    if request.method == 'POST':
+        isbn = request.POST.get('isbn')
+
+        try:
+            book = Book.objects.get(isbn=isbn, status='issued')
+
+            # Update the IssuedBook status to 'return_requested'
+            book.status = 'return_requested'
+            book.save()
+
+            return render(request, 'library/return_request_success.html')  # Redirect to a success page
+        except book.DoesNotExist:
+            return render(request, 'library/return_request_failure.html')
+
+    return render(request, 'library/return_request_failure.html')  # Redirect to a failure page
+
+

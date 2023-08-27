@@ -73,12 +73,14 @@ border-radius: 5px;
           <th>Student Name</th>
           <th>Student ID</th>
           <th>Book Name</th>
+          <th>ISBN</th>
           <th>Author</th>
           <th>Issued</th>
           <th>Expiry Date</th>
           <th>Fine</th>
           <th>Issued By</th>
           <th>Status</th>
+          <th>Action</th>
 
         </tr>
         </thead>
@@ -96,11 +98,23 @@ border-radius: 5px;
                 <td>{{ t.books.0.1 }}</td>
                 <td>{{ t.books.0.2 }}</td>
                 <td>{{ t.books.0.3 }}</td>
+                <td>{{ t.books.0.4 }}</td>
                 <td>{{ t.issued_date }}</td>
                 <td>{{ t.expiry_date }}</td>
                 <td>{{ t.fine }}</td>
                 <td>{{ t.issued_by }}</td>
-                <td>{{ t.books.0.4 }}</td>
+                <td>{{ t.books.0.5 }}</td>
+                <td>
+                  <form action="{% url 'returnbook' %}" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="isbn" value="{{ t.books.0.3 }}">
+                    {% if t.books.0.5 == 'return_requested' %}
+                      <button type="button" class="btn btn-secondary" disabled>Return</button>
+                    {% else %}
+                      <button type="submit" class="btn btn-secondary">Return</button>
+                    {% endif %}
+                </form>
+                </td>
               </tr>
            {% endfor %}
         </tbody>

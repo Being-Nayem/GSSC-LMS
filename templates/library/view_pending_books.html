@@ -64,7 +64,7 @@
 
       .btn-dlt-edt{
         display:flex;
-        justify-content: center;
+        justify-content: space-between;
       }
 
       /* Apply styles to the entire alert section */
@@ -132,7 +132,11 @@
                       <input type="hidden" name="isbn" value="{{ book.isbn }}">
                       <button type="submit" class="btn btn-primary">Approve</button>
                     </form>
-                  
+                    <form action="{% url 'decline-issue-book' %}" method="POST">
+                      {% csrf_token %}
+                      <input type="hidden" name="book_id" value="{{ book.pk }}">
+                      <button type="submit" class="btn btn-outline-warning">Decline</button>
+                    </form>
                   </div>
                 </td>
               </tr>

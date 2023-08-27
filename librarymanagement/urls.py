@@ -53,6 +53,8 @@ urlpatterns = [
     path('student/<int:pk>/', views.edit_student, name='edit-student'),
     path('viewbook_by_student', views.viewbook_viewbyStudent),
     path('borrow-book', views.request_borrow_book, name='borrow-book'),
-    path('viewpendingbooks/', views.pending_book_requests),
+    path('viewpendingbooks/', views.pending_book_requests, name='viewpendingbooks'),
     path('approve-issue-book/', views.approve_issue_book, name='approve-issue-book'),
+    path('declineissuebook', views.decline_issue_book, name='decline-issue-book'),
+    path('returnbook', views.request_return_book, name='returnbook'),
 ]

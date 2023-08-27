@@ -40,7 +40,8 @@ class Book(models.Model):
     status_choices = [
         ('received', 'Received'),
         ('issued', 'Issued'),
-        ('pending','Pending')
+        ('pending','Pending'),
+        ('return_requested', 'Return_Requested')
     ]
     
     name=models.CharField(max_length=30)

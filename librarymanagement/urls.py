@@ -51,7 +51,7 @@ urlpatterns = [
     path('book/<int:pk>/', views.edit_book, name='edit-book'),
     path('remove-student', views.delete_studentByAdmin, name='remove-student-admin'),
     path('student/<int:pk>/', views.edit_student, name='edit-student'),
-    path('viewbook_by_student', views.viewbook_viewbyStudent),
+    path('viewbook_by_student', views.viewbook_viewbyStudent, name= 'viewALLbookByStudent'),
     path('borrow-book', views.request_borrow_book, name='borrow_book'),
     path('viewpendingbooks/', views.pending_book_requests, name='view_pendingbooks'),
     path('approve-issue-book/', views.approve_issue_book, name='approve_issue_book'),
@@ -59,5 +59,6 @@ urlpatterns = [
     path('returnbook', views.request_return_book, name='returnbook'),
     path('viewreturnrequest', views.view_return_request, name='view_return_request'),
     path('approve-return-request', views.approve_return_book, name='approve_return_request'),
+    path('search-book-student', views.search_book_student, name='search_book_student')
 ]
 

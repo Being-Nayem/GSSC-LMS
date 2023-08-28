@@ -476,3 +476,18 @@ def approve_return_book(request):
             pass  # Handle error if book not found or not in 'pending' status
 
     return render(request, 'library/request_approve_failure.html')  # Redirect to a decline failure page
+
+
+@login_required(login_url='studentlogin')
+def search_book_student(request):
+    if 'keywords' in request.GET:
+        keywords = request.GET['keywords']
+        # Perform the filtering or searching logic based on the keywords
+        # For example, you can search for books whose name or author contains the keywords
+        # Modify the following line to match your filtering criteria
+        books = Book.objects.filter(name__icontains=keywords)
+
+        context = {'books': books, 'keywords': keywords}
+        return render(request, 'library/search_book_student.html', context)
+    else:
+        return render(request, 'library/book_not_found.html')

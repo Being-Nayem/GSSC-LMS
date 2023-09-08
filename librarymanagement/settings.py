@@ -25,7 +25,7 @@ STATIC_DIR=os.path.join(BASE_DIR,'static')
 SECRET_KEY = 'k(6-_4sgig$sbrccr2*0=7s)bklpiywi#_121l)s(f8)dq^^wv'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
 
 ALLOWED_HOSTS = ['gssc-library-management-system-production.up.railway.app']
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -119,10 +119,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
+DEBUG = False
 STATIC_URL = '/static/'
-STATICFILES_DIRS=[
-    STATIC_DIR,
-]
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 LOGIN_REDIRECT_URL='/afterlogin'
 

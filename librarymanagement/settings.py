@@ -27,7 +27,7 @@ SECRET_KEY = 'k(6-_4sgig$sbrccr2*0=7s)bklpiywi#_121l)s(f8)dq^^wv'
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
 
-ALLOWED_HOSTS = ['https://gssc-lms.onrender.com']
+ALLOWED_HOSTS = ['gssc-lms.onrender.com']
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Application definition
@@ -125,13 +125,13 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 LOGIN_REDIRECT_URL='/afterlogin'
 
-#for email
-EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND')
-EMAIL_HOST = os.environ.get('EMAIL_HOST')
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-EMAIL_USE_TLS = True
-EMAIL_PORT = 587
+# #for email
+# EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND')
+# EMAIL_HOST = os.environ.get('EMAIL_HOST')
+# EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+# EMAIL_USE_TLS = True
+# EMAIL_PORT = 587
 
 
 # AUTH_USER_MODEL = 'librarymanagement.StudentExtra'

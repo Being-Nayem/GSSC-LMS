@@ -27,7 +27,7 @@ SECRET_KEY = 'k(6-_4sgig$sbrccr2*0=7s)bklpiywi#_121l)s(f8)dq^^wv'
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
 
-ALLOWED_HOSTS = ['gssc-lms.onrender.com']
+ALLOWED_HOSTS = ['gssc-lms.onrender.com','127.0.0.1']
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Application definition

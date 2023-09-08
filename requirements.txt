@@ -1,6 +1,12 @@
-asgiref==3.2.7
-Django==3.0.5
+asgiref==3.7.2
+dj-database-url==2.1.0
+Django==4.2.5
+django-dotenv==1.4.2
 django-widget-tweaks==1.4.8
+gunicorn==21.2.0
+packaging==23.1
+psycopg2==2.9.7
 pytz==2020.1
 sqlparse==0.3.1
-
+typing_extensions==4.7.1
+tzdata==2023.3

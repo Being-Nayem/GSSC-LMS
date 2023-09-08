@@ -4,6 +4,7 @@ from datetime import datetime,timedelta
 import uuid
 
 class StudentExtra(models.Model):
+    my_primary_key = models.BigAutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     student_id = models.CharField(max_length=40, unique=True)  # Set your default value here
     department_name = models.CharField(max_length=100, default="Unknown Department")  # Set your default value here
@@ -43,7 +44,7 @@ class Book(models.Model):
         ('pending','Pending'),
         ('return_requested', 'Return_Requested')
     ]
-    
+    my_primary_key = models.BigAutoField(primary_key=True)
     name=models.CharField(max_length=30)
     isbn=models.PositiveIntegerField()
     author=models.CharField(max_length=40)
@@ -62,6 +63,7 @@ def get_expiry():
     return datetime.today() + timedelta(days=15)
 
 class IssuedBook(models.Model):
+    my_primary_key = models.BigAutoField(primary_key=True)
     #moved this in forms.py
     #enrollment=[(student.enrollment,str(student.get_name)+' ['+str(student.enrollment)+']') for student in StudentExtra.objects.all()]
     student_id=models.CharField(max_length=30)
